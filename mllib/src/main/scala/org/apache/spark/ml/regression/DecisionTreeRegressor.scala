@@ -112,7 +112,8 @@ class DecisionTreeRegressor @Since("1.4.0") (@Since("1.4.0") override val uid: S
     instr.logParams(this, params: _*)
 
     val trees = RandomForest.run(oldDataset, strategy, numTrees = 1, featureSubsetStrategy = "all",
-      seed = $(seed), instr = Some(instr), parentUID = Some(uid))
+      seed = $(seed), instr = Some(instr), parentUID = Some(uid),
+        intermediateStorageLevel = $(intermediateStorageLevel))
 
     trees.head.asInstanceOf[DecisionTreeRegressionModel]
   }
@@ -126,8 +127,9 @@ class DecisionTreeRegressor @Since("1.4.0") (@Since("1.4.0") override val uid: S
     instr.logDataset(data)
     instr.logParams(this, params: _*)
 
-    val trees = RandomForest.run(data, oldStrategy, numTrees = 1, featureSubsetStrategy,
-      seed = $(seed), instr = Some(instr), parentUID = Some(uid))
+      val trees = RandomForest.run(data, oldStrategy, numTrees = 1, featureSubsetStrategy = "all",
+      seed = $(seed), instr = Some(instr), parentUID = Some(uid),
+        intermediateStorageLevel = $(intermediateStorageLevel))
 
     trees.head.asInstanceOf[DecisionTreeRegressionModel]
   }

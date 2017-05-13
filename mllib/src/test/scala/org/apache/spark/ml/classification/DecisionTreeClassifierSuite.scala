@@ -375,6 +375,14 @@ class DecisionTreeClassifierSuite extends MLTest with DefaultReadWriteTest {
 
     testDefaultReadWrite(model)
   }
+
+  test("intermediate dataset storage level") {
+    val dt = new DecisionTreeClassifier()
+    dt.getIntermediateStorageLevel == "MEMORY_AND_DISK"
+    // set and check the storage level
+    dt.setIntermediateStorageLevel("DISK_ONLY")
+    dt.getIntermediateStorageLevel == "DISK_ONLY"
+  }
 }
 
 private[ml] object DecisionTreeClassifierSuite extends SparkFunSuite {

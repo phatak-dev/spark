@@ -92,6 +92,7 @@ private[spark] object RandomForest extends Logging with Serializable {
       featureSubsetStrategy: String,
       seed: Long,
       instr: Option[Instrumentation],
+      intermediateStorageLevel: String,
       prune: Boolean = true, // exposed for testing only, real trees are always pruned
       parentUID: Option[String] = None): Array[DecisionTreeModel] = {
 
@@ -133,7 +134,7 @@ private[spark] object RandomForest extends Logging with Serializable {
 
     val baggedInput = BaggedPoint
       .convertToBaggedRDD(treeInput, strategy.subsamplingRate, numTrees, withReplacement, seed)
-      .persist(StorageLevel.MEMORY_AND_DISK)
+      .persist(StorageLevel.fromString(intermediateStorageLevel))
 
     // depth of the decision tree
     val maxDepth = strategy.maxDepth

@@ -119,7 +119,8 @@ class DecisionTreeClassifier @Since("1.4.0") (
       cacheNodeIds, checkpointInterval, impurity, seed)
 
     val trees = RandomForest.run(oldDataset, strategy, numTrees = 1, featureSubsetStrategy = "all",
-      seed = $(seed), instr = Some(instr), parentUID = Some(uid))
+      seed = $(seed), instr = Some(instr), parentUID = Some(uid),
+        intermediateStorageLevel = $(intermediateStorageLevel))
 
     trees.head.asInstanceOf[DecisionTreeClassificationModel]
   }
@@ -132,8 +133,9 @@ class DecisionTreeClassifier @Since("1.4.0") (
     instr.logParams(this, maxDepth, maxBins, minInstancesPerNode, minInfoGain, maxMemoryInMB,
       cacheNodeIds, checkpointInterval, impurity, seed)
 
-    val trees = RandomForest.run(data, oldStrategy, numTrees = 1, featureSubsetStrategy = "all",
-      seed = 0L, instr = Some(instr), parentUID = Some(uid))
+    val trees = RandomForest.run(data, oldStrategy, numTrees = 2, featureSubsetStrategy = "all",
+      seed = 0L, instr = Some(instr), parentUID = Some(uid),
+        intermediateStorageLevel = $(intermediateStorageLevel))
 
     trees.head.asInstanceOf[DecisionTreeClassificationModel]
   }
