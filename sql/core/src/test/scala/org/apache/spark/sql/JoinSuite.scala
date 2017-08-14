@@ -33,7 +33,7 @@ class JoinSuite extends QueryTest with SharedSQLContext {
   setupTestData()
 
   def statisticSizeInByte(df: DataFrame): BigInt = {
-    df.queryExecution.optimizedPlan.stats(sqlConf).sizeInBytes
+    df.queryExecution.optimizedPlan.stats.sizeInBytes
   }
 
   test("equi-join is hash-join") {
@@ -216,6 +216,9 @@ class JoinSuite extends QueryTest with SharedSQLContext {
           Row(1, null, 2, 2) ::
           Row(2, 2, 1, null) ::
           Row(2, 2, 2, 2) :: Nil)
+      checkAnswer(
+        testData3.as("x").join(testData3.as("y"), $"x.a" > $"y.a"),
+        Row(2, 2, 1, null) :: Nil)
     }
     withSQLConf(SQLConf.CROSS_JOINS_ENABLED.key -> "false") {
       val e = intercept[Exception] {
@@ -604,6 +607,35 @@ class JoinSuite extends QueryTest with SharedSQLContext {
     }
 
     cartesianQueries.foreach(checkCartesianDetection)
+
+    // Check that left_semi, left_anti, existence joins without conditions do not throw
+    // an exception if cross joins are disabled
+    withSQLConf(SQLConf.CROSS_JOINS_ENABLED.key -> "false") {
+      checkAnswer(
+        sql("SELECT * FROM testData3 LEFT SEMI JOIN testData2"),
+        Row(1, null) :: Row (2, 2) :: Nil)
+      checkAnswer(
+        sql("SELECT * FROM testData3 LEFT ANTI JOIN testData2"),
+        Nil)
+      checkAnswer(
+        sql(
+          """
+            |SELECT a FROM testData3
+            |WHERE
+            |  EXISTS (SELECT * FROM testData)
+            |OR
+            |  EXISTS (SELECT * FROM testData2)""".stripMargin),
+        Row(1) :: Row(2) :: Nil)
+      checkAnswer(
+        sql(
+          """
+            |SELECT key FROM testData
+            |WHERE
+            |  key IN (SELECT a FROM testData2)
+            |OR
+            |  key IN (SELECT a FROM testData3)""".stripMargin),
+        Row(1) :: Row(2) :: Row(3) :: Nil)
+    }
   }
 
   test("test SortMergeJoin (without spill)") {
@@ -665,7 +697,8 @@ class JoinSuite extends QueryTest with SharedSQLContext {
 
   test("test SortMergeJoin (with spill)") {
     withSQLConf(SQLConf.AUTO_BROADCASTJOIN_THRESHOLD.key -> "1",
-      "spark.sql.sortMergeJoinExec.buffer.spill.threshold" -> "0") {
+      "spark.sql.sortMergeJoinExec.buffer.in.memory.threshold" -> "0",
+      "spark.sql.sortMergeJoinExec.buffer.spill.threshold" -> "1") {
 
       assertSpilled(sparkContext, "inner join") {
         checkAnswer(
